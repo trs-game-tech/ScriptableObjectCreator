@@ -3,6 +3,6 @@
   "author": "trs-game",
   "version": "1.0.0",
   "displayName": "ScriptableObjectCreator",
-  "description": "This is ScriptableObject creation helper package.",
+  "description": "This is a helper package for creating ScriptableObjects.",
   "unity": "2018.4"
 }
