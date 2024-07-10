@@ -5,4 +5,6 @@
 ### Install via Unity Package Manager
 
 Add package from git URL  
-`https://github.com/trs-game-tech/ScriptableObjectCreator.git`
+```
+https://github.com/trs-game-tech/ScriptableObjectCreator.git
+```
