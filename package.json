@@ -1,0 +1,8 @@
+{
+  "name": "jp.trs_game.scriptable_object_creator",
+  "author": "trs-game",
+  "version": "1.0.0",
+  "displayName": "ScriptableObjectCreator",
+  "description": "This is ScriptableObject creation helper package.",
+  "unity": "2018.4"
+}
