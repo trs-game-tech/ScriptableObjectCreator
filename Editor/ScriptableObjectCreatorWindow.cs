@@ -25,41 +25,6 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         typeof(StateMachineBehaviour),
     };
 
-    private enum MatchMode
-    {
-        And,
-        Or,
-    }
-
-    private class SearchToken
-    {
-        public readonly MatchMode MatchMode;
-        public readonly string Text;
-        public bool IsValid => Text?.Length > 0;
-
-        public SearchToken(string str)
-        {
-            if (str.Length == 0)
-                return;
-
-            switch (str[0])
-            {
-                case '|':
-                    MatchMode = MatchMode.Or;
-                    Text = str.Substring(1);
-                    break;
-                case '&':
-                    MatchMode = MatchMode.And;
-                    Text = str.Substring(1);
-                    break;
-                default:
-                    MatchMode = MatchMode.And;
-                    Text = str;
-                    break;
-            }
-        }
-    }
-
     private static Type[] s_types;
 
     private Vector2 _scroll;
@@ -176,18 +141,18 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         }
     }
 
-    private static SearchToken[] ParseTokens(string text)
+    private static string[] ParseTokens(string text)
     {
         if (string.IsNullOrEmpty(text))
-            return Array.Empty<SearchToken>();
+            return Array.Empty<string>();
 
         return text.Split(SearchTextSplitSeparator)
-            .Select(s => new SearchToken(s.Trim()))
-            .Where(t => t.IsValid)
+            .Select(s => s.Trim())
+            .Where(t => t.Length > 0)
             .ToArray();
     }
 
-    private static bool IsMatch(Type type, SearchToken[] tokens)
+    private static bool IsMatch(Type type, string[] tokens)
     {
         var fullName = type.FullName;
         if (fullName == null)
@@ -195,13 +160,7 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
 
         foreach (var token in tokens)
         {
-            if (token.MatchMode == MatchMode.Or && fullName.Contains(token.Text, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        foreach (var token in tokens)
-        {
-            if (token.MatchMode == MatchMode.And && !fullName.Contains(token.Text, StringComparison.OrdinalIgnoreCase))
+            if (!fullName.Contains(token, StringComparison.OrdinalIgnoreCase))
                 return false;
         }
         return true;
