@@ -18,12 +18,13 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         "UnityEditor.",
     };
 
-    private static readonly Type[] ExcludeSubclasses =
+    private static readonly Type[] ExcludeSubclasses = new Type[]
     {
         typeof(Editor),
         typeof(EditorWindow),
-        typeof(StateMachineBehaviour),
-    };
+        Type.GetType("UnityEngine.StateMachineBehaviour,UnityEngine.AnimationModule"),
+        Type.GetType("UnityEngine.Timeline.Marker,Unity.Timeline"),
+    }.Where(t => t != null).ToArray();
 
     private static Type[] s_types;
 
