@@ -162,7 +162,7 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
 
         foreach (var token in tokens)
         {
-            if (!fullName.Contains(token, StringComparison.OrdinalIgnoreCase))
+            if (fullName.IndexOf(token, StringComparison.OrdinalIgnoreCase) == -1)
                 return false;
         }
         return true;
