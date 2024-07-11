@@ -68,29 +68,30 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
     private void OnGUI()
     {
         string nextFocusControlName = null;
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUI.SetNextControlName(SearchTextControlName);
+            var text = EditorGUILayout.TextField(_searchText);
+            if (text != _searchText)
+            {
+                _searchText = text;
+                ApplySearch();
+            }
+
+            if (GUILayout.Button("clear", ClearButtonGUIOptions))
+            {
+                _searchText = null;
+
+                GUI.FocusControl("");
+                nextFocusControlName = SearchTextControlName;
+
+                ApplySearch();
+            }
+        }
+
         using (var scrollScope = new EditorGUILayout.ScrollViewScope(_scroll))
         {
             _scroll = scrollScope.scrollPosition;
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUI.SetNextControlName(SearchTextControlName);
-                var text = EditorGUILayout.TextField(_searchText);
-                if (text != _searchText)
-                {
-                    _searchText = text;
-                    ApplySearch();
-                }
-
-                if (GUILayout.Button("clear", ClearButtonGUIOptions))
-                {
-                    _searchText = null;
-
-                    GUI.FocusControl("");
-                    nextFocusControlName = SearchTextControlName;
-
-                    ApplySearch();
-                }
-            }
 
             if (_matchTypes.Count > 0)
             {
