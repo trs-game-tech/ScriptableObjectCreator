@@ -14,8 +14,8 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
     private static readonly string[] ExcludeAssemblyPrefixes =
     {
         "Unity.",
-        "UnityEngine.",
-        "UnityEditor.",
+        "UnityEngine",
+        "UnityEditor",
     };
 
     private static readonly Type[] ExcludeSubclasses = new Type[]
