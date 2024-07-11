@@ -100,7 +100,8 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
                     if (GUILayout.Button(type.FullName))
                     {
                         Close();
-                        CreateScriptableObject(type, _destinationDirectory);
+                        // NOTE: Unity2019で名前入力が正常に動作しなかったのでdelayCallで実行するようにしています
+                        EditorApplication.delayCall += () => CreateScriptableObject(type, _destinationDirectory);
                     }
                 }
             }
