@@ -12,3 +12,8 @@ Add package from git URL
 ```
 https://github.com/trs-game-tech/ScriptableObjectCreator.git
 ```
+
+## License
+
+The Unlicence.  
+https://unlicense.org/
