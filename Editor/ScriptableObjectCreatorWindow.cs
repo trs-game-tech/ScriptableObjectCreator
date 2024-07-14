@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -27,12 +28,36 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         Type.GetType("UnityEngine.Timeline.Marker,Unity.Timeline"),
     }.Where(t => t != null).ToArray();
 
-    private static Type[] s_types;
+    private class ListItem
+    {
+        public readonly Type Type;
+        public readonly string FullName;
+        public readonly string CreateMenuName;
+        public readonly string CreateFileName;
+        public string DisplayName => CreateMenuName ?? FullName;
+
+        public ListItem(Type type)
+        {
+            Type = type;
+            FullName = type.FullName ?? string.Empty;
+            CreateFileName = type.Name + ".asset";
+            var createAssetMenuAttribute = type.GetCustomAttribute<CreateAssetMenuAttribute>();
+            if (createAssetMenuAttribute != null)
+            {
+                if (!string.IsNullOrEmpty(createAssetMenuAttribute.menuName))
+                    CreateMenuName = createAssetMenuAttribute.menuName;
+                if (!string.IsNullOrEmpty(createAssetMenuAttribute.fileName))
+                    CreateFileName = createAssetMenuAttribute.fileName.Replace('/', '_');
+            }
+        }
+    }
+
+    private static ListItem[] s_allItems;
 
     private Vector2 _scroll;
     private string _searchText;
     private string _destinationDirectory;
-    private List<Type> _matchTypes = new List<Type>();
+    private List<ListItem> _matchItems = new List<ListItem>();
     private string _focusTo;
 
     [MenuItem(MenuName)]
@@ -42,7 +67,7 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         var destinationDirectory = GetAssetDirectoryPath(selectedAsset);
         if (selectedAsset is MonoScript monoScript)
         {
-            CreateScriptableObject(monoScript.GetClass(), destinationDirectory);
+            CreateScriptableObject(new ListItem(monoScript.GetClass()), destinationDirectory);
             return;
         }
 
@@ -54,11 +79,12 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
 
     private void OnEnable()
     {
-        if (s_types == null)
+        if (s_allItems == null)
         {
-            s_types = TypeCache.GetTypesDerivedFrom<ScriptableObject>()
+            s_allItems = TypeCache.GetTypesDerivedFrom<ScriptableObject>()
                 .Where(IsTargetScriptableObject)
-                .OrderBy(type => type.FullName)
+                .Select(t => new ListItem(t))
+                .OrderBy(type => type.DisplayName)
                 .ToArray();
         }
 
@@ -94,15 +120,15 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
         {
             _scroll = scrollScope.scrollPosition;
 
-            if (_matchTypes.Count > 0)
+            if (_matchItems.Count > 0)
             {
-                foreach (var type in _matchTypes)
+                foreach (var item in _matchItems)
                 {
-                    if (GUILayout.Button(type.FullName))
+                    if (GUILayout.Button(item.DisplayName))
                     {
                         Close();
                         // NOTE: Unity2019で名前入力が正常に動作しなかったのでdelayCallで実行するようにしています
-                        EditorApplication.delayCall += () => CreateScriptableObject(type, _destinationDirectory);
+                        EditorApplication.delayCall += () => CreateScriptableObject(item, _destinationDirectory);
                     }
                 }
             }
@@ -127,20 +153,20 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
 
     private void ApplySearch()
     {
-        _matchTypes.Clear();
+        _matchItems.Clear();
 
         var tokens = ParseTokens(_searchText);
         if (tokens.Length == 0)
         {
-            _matchTypes.AddRange(s_types);
+            _matchItems.AddRange(s_allItems);
             return;
         }
 
-        foreach (var type in s_types)
+        foreach (var item in s_allItems)
         {
-            if (IsMatch(type, tokens))
+            if (IsMatch(item, tokens))
             {
-                _matchTypes.Add(type);
+                _matchItems.Add(item);
             }
         }
     }
@@ -156,27 +182,28 @@ public sealed class ScriptableObjectCreatorWindow : EditorWindow
             .ToArray();
     }
 
-    private static bool IsMatch(Type type, string[] tokens)
+    private static bool IsMatch(ListItem item, string[] tokens)
     {
-        var fullName = type.FullName;
-        if (fullName == null)
-            return false;
-
         foreach (var token in tokens)
         {
-            if (fullName.IndexOf(token, StringComparison.OrdinalIgnoreCase) == -1)
-                return false;
+            if (item.FullName.IndexOf(token, StringComparison.OrdinalIgnoreCase) != -1)
+                continue;
+
+            if (item.CreateMenuName != null && item.CreateMenuName.IndexOf(token, StringComparison.OrdinalIgnoreCase) != -1)
+                continue;
+
+            return false;
         }
         return true;
     }
 
-    private static void CreateScriptableObject(Type type, string destinationDirectory)
+    private static void CreateScriptableObject(ListItem listItem, string destinationDirectory)
     {
         if (string.IsNullOrEmpty(destinationDirectory))
             destinationDirectory = "Assets";
 
-        var asset = CreateInstance(type);
-        var assetPath = string.Format("{0}/{1}.asset", destinationDirectory, type.Name);
+        var asset = CreateInstance(listItem.Type);
+        var assetPath = string.Format("{0}/{1}", destinationDirectory, listItem.CreateFileName);
         ProjectWindowUtil.CreateAsset(asset, assetPath);
     }
 
